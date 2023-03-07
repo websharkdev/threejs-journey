@@ -1,16 +1,40 @@
 import * as THREE from "three";
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls'
-
+import './style.css'
 
 /**
  * Cursor
  */
 
 // Sizes
+
 const sizes = {
-  width: 800,
-  height: 600,
+  width: window.innerWidth,
+  height: window.innerHeight,
 };
+
+
+
+window.addEventListener("resize", () => {
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
+  // update camera
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
+  // update renderer
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
+
+
+window.addEventListener('dblclick', () => {
+
+  const fullscreenElement = document.fullscreenElement || document.webkitfullscreenElement
+
+  fullscreenElement ? document.exitFullscreen() : canvas.requestFullscreen();
+})
+
+
 const cursor = {
   x: 0,
   y: 0
@@ -36,8 +60,12 @@ const mesh = new THREE.Mesh(
 scene.add(mesh);
 
 // Camera
-const aspectRatio = sizes.width / sizes.height;
-const camera = new THREE.PerspectiveCamera(75, aspectRatio, 0.1, 100);
+const camera = new THREE.PerspectiveCamera(
+  75,
+  sizes.width / sizes.height,
+  0.1,
+  100
+);
 
 // const camera = new THREE.OrthographicCamera(
 //   -1 * aspectRatio,
@@ -61,7 +89,7 @@ const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
 });
 renderer.setSize(sizes.width, sizes.height);
-
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // Animate
 const clock = new THREE.Clock();
 
