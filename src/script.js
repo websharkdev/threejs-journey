@@ -1,6 +1,19 @@
 import * as THREE from "three";
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls'
 import './style.css'
+import gsap from "gsap";
+import * as dat from 'dat.gui'
+
+
+
+// DebugUI
+const gui = new dat.GUI()
+const debugParameters = {
+  color: "#ff0",
+  spin: () => {
+    gsap.to(mesh.rotation, {duration: 1, y: mesh.rotation.y + Math.PI * 4})
+  }
+}
 
 /**
  * Cursor
@@ -79,10 +92,25 @@ geometry.setAttribute('position', positionsAttribute)
 // geometry.setAttribute("position", positionsAttribute);
 // geometry.setAttribute("position", positionsAttribute);
 
-const material = new THREE.MeshBasicMaterial({ color: '#f00', wireframe: true })
+const material = new THREE.MeshBasicMaterial({
+  color: debugParameters.color,
+  wireframe: false,
+});
 
 const mesh = new THREE.Mesh(geometry,material);
 scene.add(mesh);
+
+
+gui.add(mesh.position, 'y',  -3, 3, 1).name('mesh-position y')
+gui.add(mesh.position, 'x',  -3, 3, 1).name('mesh-position x')
+gui.add(mesh.position, 'z',  -3, 3, 1).name('mesh-position z')
+
+gui.add(material, 'wireframe')
+gui.addColor(debugParameters, "color").onChange(() => {
+  material.color.set(debugParameters.color)
+})
+
+gui.add(debugParameters, 'spin')
 
 // Camera
 const camera = new THREE.PerspectiveCamera(
