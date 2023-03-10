@@ -4,12 +4,58 @@ import './style.css'
 import gsap from "gsap";
 import * as dat from 'dat.gui'
 
+import TextureImage from './color.jpg'
+
+
+// Textures 
+
+// const image = new Image()
+// let texture = new THREE.Texture(image)
+// image.onload = () => {
+//   texture.needsUpdate = true
+// }
+
+// image.src = TextureImage
+
+const loadingManager = new THREE.LoadingManager()
+
+loadingManager.onStart = () => {
+  console.log('Start loading');
+}
+loadingManager.onProgress = () => {
+  console.log('Loading...');
+}
+loadingManager.onError = () => {
+  console.log('Error!');
+}
+
+const textureLoader = new THREE.TextureLoader(loadingManager);
+const texture = textureLoader.load(TextureImage)
+
+
+// texture.repeat.x = 2
+// texture.repeat.y = 2
+
+// texture.wrapS = THREE.MirroredRepeatWrapping
+// texture.wrapT = THREE.RepeatWrapping
+
+// texture.offset.x = 0.5
+// texture.offset.y = 0.5
+
+// texture.rotation = Math.PI * .25
+// texture.center.x = 0.5
+// texture.center.y = 0.5
+
+texture.generateMipmaps = false
+texture.minFilter = THREE.NearestFilter
+texture.magFilter = THREE.NearestFilter
+
 
 
 // DebugUI
 const gui = new dat.GUI()
 const debugParameters = {
-  color: "#ff0",
+  color: "#f00",
   spin: () => {
     gsap.to(mesh.rotation, {duration: 1, y: mesh.rotation.y + Math.PI * 4})
   }
@@ -66,19 +112,19 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 // Object
-// const geometry = new THREE.BoxBufferGeometry(1, 1, 1, 5, 5, 5)
+const geometry = new THREE.BoxBufferGeometry(1, 1, 1, 5, 5, 5)
 
-const geometry = new THREE.BufferGeometry();
+// const geometry = new THREE.BufferGeometry();
 
-const count = 50
+// const count = 50
 
-const positionsArray = new Float32Array(count * 3 * 3)
+// const positionsArray = new Float32Array(count * 3 * 3)
 
-for(let i = 0; i < count * 3 * 3; i++) {
-  positionsArray[i] = (Math.random() - .5) * 4
-}
-const positionsAttribute = new THREE.BufferAttribute(positionsArray, 3)
-geometry.setAttribute('position', positionsAttribute)
+// for(let i = 0; i < count * 3 * 3; i++) {
+//   positionsArray[i] = (Math.random() - .5) * 4
+// }
+// const positionsAttribute = new THREE.BufferAttribute(positionsArray, 3)
+// geometry.setAttribute('position', positionsAttribute)
 
 // const positionsArray = new Float32Array([
 //   0, 0, 0,
@@ -93,7 +139,8 @@ geometry.setAttribute('position', positionsAttribute)
 // geometry.setAttribute("position", positionsAttribute);
 
 const material = new THREE.MeshBasicMaterial({
-  color: debugParameters.color,
+  // color: debugParameters.color,
+  map: texture,
   wireframe: false,
 });
 
