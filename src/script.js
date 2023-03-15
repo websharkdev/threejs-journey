@@ -3,59 +3,12 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./style.css";
 import gsap from "gsap";
 import * as dat from "dat.gui";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
+import {TextureShapeImage} from './textures'
 
-import { NX, NY, NZ, PX, PY, PZ, TextureImage, TextureShapeImage, TextureTorusImage } from "./textures";
-
-// Textures
-
-// const image = new Image()
-// let texture = new THREE.Texture(image)
-// image.onload = () => {
-//   texture.needsUpdate = true
-// }
-
-// image.src = TextureImage
-
-const loadingManager = new THREE.LoadingManager();
-
-loadingManager.onStart = () => {
-  console.log("Start loading");
-};
-loadingManager.onProgress = () => {
-  console.log("Loading...");
-};
-loadingManager.onError = () => {
-  console.log("Error!");
-};
-
-const textureLoader = new THREE.TextureLoader(loadingManager);
-const texture = textureLoader.load(TextureImage);
-
-const cubeTextureLoader = new THREE.CubeTextureLoader(loadingManager)
-
-
-
-const cubeTexture = cubeTextureLoader.load([PX, NX, PY, NY, PZ, NZ]);
-
-
-
-
-// texture.repeat.x = 2
-// texture.repeat.y = 2
-
-// texture.wrapS = THREE.MirroredRepeatWrapping
-// texture.wrapT = THREE.RepeatWrapping
-
-// texture.offset.x = 0.5
-// texture.offset.y = 0.5
-
-// texture.rotation = Math.PI * .25
-// texture.center.x = 0.5
-// texture.center.y = 0.5
-
-texture.generateMipmaps = false;
-texture.minFilter = THREE.NearestFilter;
-texture.magFilter = THREE.NearestFilter;
+const textureLoader = new THREE.TextureLoader()
+const matcapTexture = textureLoader.load(TextureShapeImage);
 
 // DebugUI
 const gui = new dat.GUI();
@@ -66,11 +19,6 @@ const debugParameters = {
   },
 };
 
-/**
- * Cursor
- */
-
-// Sizes
 
 const sizes = {
   width: window.innerWidth,
@@ -99,6 +47,7 @@ const cursor = {
   x: 0,
   y: 0,
 };
+
 window.addEventListener("mousemove", (e) => {
   cursor.x = e.clientX / sizes.width - 0.5;
   cursor.y = -(e.clientY / sizes.height - 0.5);
@@ -113,108 +62,81 @@ const canvas = document.querySelector("canvas.webgl");
 // Scene
 const scene = new THREE.Scene();
 
+// Font loader
+
+const fontLoader = new FontLoader()
+
+fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
+  const textGeometry = new TextGeometry("Bortnytskyi Oleksii", {
+    font,
+    size: .5,
+    height: .2,
+    curveSegments: 5,
+    bevelEnabled: true,
+    bevelThickness: 0.03,
+    bevelSize: .02,
+    bevelOffset: 0,
+    bevelSegments: 4
+  });
+
+  // textGeometry.computeBoundingBox()
+
+  // textGeometry.translate(
+  //   -(textGeometry.boundingBox.max.x - 0.02) * 0.5,
+  //   -(textGeometry.boundingBox.max.y - 0.02) * 0.5,
+  //   -(textGeometry.boundingBox.max.z - 0.03) * 0.5
+  // );
+
+  textGeometry.center()
+
+  const textMaterial = new THREE.MeshMatcapMaterial({
+    matcap: matcapTexture,
+  });
+
+  const text = new THREE.Mesh(textGeometry, textMaterial)
+
+  scene.add(text)
+
+  const donutGeometry = new THREE.TorusBufferGeometry(.3, .2, 20, 45)
+  const donutMaterial = new THREE.MeshMatcapMaterial({matcap: matcapTexture})
+  
+  console.time('donut')
+  for(let i = 0; i < 100; i++) {
+    // const donutGeometry = new THREE.TorusBufferGeometry(.3, .2, 20, 45)
+    // const donutMaterial = new THREE.MeshMatcapMaterial({matcap: matcapTexture})
+    
+    const donut = new THREE.Mesh(donutGeometry, donutMaterial)
+
+    donut.position.x = (Math.random() - .5 ) * 10
+    donut.position.y = (Math.random() - .5 ) * 10
+    donut.position.z = (Math.random() - .5 ) * 10
+
+    donut.rotation.x = Math.random() * Math.PI
+    donut.rotation.y = Math.random() * Math.PI
+
+
+    const donutScale = Math.random()
+    donut.scale.x = donutScale
+    donut.scale.y = donutScale
+    donut.scale.z = donutScale
+
+    scene.add(donut)
+
+
+  }
+  console.timeEnd('donut')
+});
+
+
+// const axesHelper = new THREE.AxesHelper()
+// scene.add(axesHelper)
+
 // Object
 const geometry = new THREE.BoxBufferGeometry(1, 1, 1, 5, 5, 5);
 
-// const geometry = new THREE.BufferGeometry();
-
-// const count = 50
-
-// const positionsArray = new Float32Array(count * 3 * 3)
-
-// for(let i = 0; i < count * 3 * 3; i++) {
-//   positionsArray[i] = (Math.random() - .5) * 4
-// }
-// const positionsAttribute = new THREE.BufferAttribute(positionsArray, 3)
-// geometry.setAttribute('position', positionsAttribute)
-
-// const positionsArray = new Float32Array([
-//   0, 0, 0,
-//   0, 1, 0,
-//   1, 0, 0
-// ])
-
-// const positionsAttribute = new THREE.BufferAttribute(positionsArray, 3)
-
-// geometry.setAttribute("position", positionsAttribute);
-// geometry.setAttribute("position", positionsAttribute);
-
-// const material = new THREE.MeshBasicMaterial({
-//   // color: debugParameters.color,
-//   map: texture,
-//   wireframe: false,
-// });
-
-// const material = new THREE.MeshBasicMaterial();
-// material.map = texture;
-// material.transparent = true;
-// material.alphaMap = texture
-
-// material.side = THREE.BackSide
-
-// const material = new THREE.MeshNormalMaterial()
-// material.flatShading = true
-
-// const material = new THREE.MeshMatcapMaterial({
-//   matcap: textureShape
-// })
-
-// const material = new THREE.MeshLambertMaterial()
-// const material = new THREE.MeshPhongMaterial()
-
-// material.shininess = 100
-// material.specular = new THREE.Color('#ff0')
-// const material = new THREE.MeshToonMaterial()
-// const material = new THREE.MeshStandardMaterial();
-// material.metalness = 0.45;
-// material.roughness = 0.65;
-
-// material.map = texture;
-
-// material.aoMap = texture;
-// material.aoMapIntensity = 1;
-
-// material.displacementMap = texture;
-// material.displacementScale = 0.05;
-
-// material.metalnessMap = texture;
-// material.roughnessMap = texture;
 const material = new THREE.MeshStandardMaterial();
-material.metalness = 0.7;
-material.roughness = 0.2;
-
-
-material.envMap = cubeTexture;
-
-const sphere = new THREE.Mesh(
-  new THREE.SphereBufferGeometry(0.5, 64, 64),
-  material
-);
-
-sphere.geometry.setAttribute(
-  "uv2",
-  new THREE.BufferAttribute(sphere.geometry.attributes.uv.array, 2)
-);
-
-const plane = new THREE.Mesh(
-  new THREE.PlaneBufferGeometry(1, 1, 100, 100),
-  material
-);
-plane.geometry.setAttribute(
-  "uv2",
-  new THREE.BufferAttribute(plane.geometry.attributes.uv.array, 2)
-);
-
-const torus = new THREE.Mesh(
-  new THREE.TorusBufferGeometry(0.3, 0.2, 64, 128),
-  material
-);
-torus.geometry.setAttribute(
-  "uv2",
-  new THREE.BufferAttribute(torus.geometry.attributes.uv.array, 2)
-);
-
 // LIGHTS
+
 
 const ambientLight = new THREE.AmbientLight("#fff", 0.5);
 scene.add(ambientLight);
@@ -227,22 +149,9 @@ pointLight.position.z = 4;
 
 scene.add(pointLight);
 
-torus.position.x = -2;
-plane.position.x = 2;
-
 const mesh = new THREE.Mesh(geometry, material);
-scene.add(sphere, plane, torus);
 
-// gui.add(mesh.position, "y", -3, 3, 1).name("mesh-position y");
-// gui.add(mesh.position, "x", -3, 3, 1).name("mesh-position x");
-// gui.add(mesh.position, "z", -3, 3, 1).name("mesh-position z");
 
-gui.add(material, 'metalness', -1, 1, 0.01).name('metalness')
-gui.add(material, "roughness", -1, 1, 0.01).name("roughness");
-gui.add(material, "aoMapIntensity", -5, 5, 0.1).name("Intensity");
-gui.add(material, "displacementScale", -1, 1, 0.001).name("displacementScale");
-
-// gui.add(material, 'wireframe')
 gui.addColor(debugParameters, "color").onChange(() => {
   material.color.set(debugParameters.color);
 });
@@ -257,16 +166,6 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 
-// const camera = new THREE.OrthographicCamera(
-//   -1 * aspectRatio,
-//   1 * aspectRatio,
-//   1,
-//   -1,
-//   0.1,
-//   100
-// );
-// camera.position.x = 2;
-// camera.position.y = 2;
 camera.position.z = 2;
 camera.lookAt(mesh.position);
 scene.add(camera);
@@ -286,20 +185,6 @@ const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
   // Update objects
-  sphere.rotation.y = elapsedTime * 0.4;
-  torus.rotation.y = elapsedTime * 0.4;
-  plane.rotation.y = elapsedTime * 0.4;
-  // camera.position.x = Math.sin(cursor.x * Math.PI * 2) * 3
-  // camera.position.z = Math.cos(cursor.x * Math.PI * 2) * 3
-  // camera.position.y = cursor.y * Math.PI * 2
-
-  // camera.lookAt(mesh.position)
-
-  // sphere.rotation.x = elapsedTime * .4;
-
-  // torus.rotation.x = elapsedTime * .4;
-
-  // plane.rotation.x = elapsedTime * .4;
 
   controls.update();
   // Render
