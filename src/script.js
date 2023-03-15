@@ -1,83 +1,197 @@
-import './style.css'
-import * as THREE from 'three'
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import "./style.css";
+import gsap from "gsap";
+import * as dat from "dat.gui";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
+import {TextureShapeImage} from './textures'
+
+const textureLoader = new THREE.TextureLoader()
+const matcapTexture = textureLoader.load(TextureShapeImage);
+
+// DebugUI
+const gui = new dat.GUI();
+const debugParameters = {
+  color: "#f00",
+  spin: () => {
+    gsap.to(mesh.rotation, { duration: 1, y: mesh.rotation.y + Math.PI * 4 });
+  },
+};
+
+
+const sizes = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
+
+window.addEventListener("resize", () => {
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
+  // update camera
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
+  // update renderer
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
+
+window.addEventListener("dblclick", () => {
+  const fullscreenElement =
+    document.fullscreenElement || document.webkitfullscreenElement;
+
+  fullscreenElement ? document.exitFullscreen() : canvas.requestFullscreen();
+});
+
+const cursor = {
+  x: 0,
+  y: 0,
+};
+
+window.addEventListener("mousemove", (e) => {
+  cursor.x = e.clientX / sizes.width - 0.5;
+  cursor.y = -(e.clientY / sizes.height - 0.5);
+});
+
+/**
+ * Base
+ */
+// Canvas
+const canvas = document.querySelector("canvas.webgl");
 
 // Scene
-const scene = new THREE.Scene()
+const scene = new THREE.Scene();
+
+// Font loader
+
+const fontLoader = new FontLoader()
+
+fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
+  const textGeometry = new TextGeometry("Bortnytskyi Oleksii", {
+    font,
+    size: .5,
+    height: .2,
+    curveSegments: 5,
+    bevelEnabled: true,
+    bevelThickness: 0.03,
+    bevelSize: .02,
+    bevelOffset: 0,
+    bevelSegments: 4
+  });
+
+  // textGeometry.computeBoundingBox()
+
+  // textGeometry.translate(
+  //   -(textGeometry.boundingBox.max.x - 0.02) * 0.5,
+  //   -(textGeometry.boundingBox.max.y - 0.02) * 0.5,
+  //   -(textGeometry.boundingBox.max.z - 0.03) * 0.5
+  // );
+
+  textGeometry.center()
+
+  const textMaterial = new THREE.MeshMatcapMaterial({
+    matcap: matcapTexture,
+  });
+
+  const text = new THREE.Mesh(textGeometry, textMaterial)
+
+  scene.add(text)
+
+  const donutGeometry = new THREE.TorusBufferGeometry(.3, .2, 20, 45)
+  const donutMaterial = new THREE.MeshMatcapMaterial({matcap: matcapTexture})
+  
+  console.time('donut')
+  for(let i = 0; i < 100; i++) {
+    // const donutGeometry = new THREE.TorusBufferGeometry(.3, .2, 20, 45)
+    // const donutMaterial = new THREE.MeshMatcapMaterial({matcap: matcapTexture})
+    
+    const donut = new THREE.Mesh(donutGeometry, donutMaterial)
+
+    donut.position.x = (Math.random() - .5 ) * 10
+    donut.position.y = (Math.random() - .5 ) * 10
+    donut.position.z = (Math.random() - .5 ) * 10
+
+    donut.rotation.x = Math.random() * Math.PI
+    donut.rotation.y = Math.random() * Math.PI
+
+
+    const donutScale = Math.random()
+    donut.scale.x = donutScale
+    donut.scale.y = donutScale
+    donut.scale.z = donutScale
+
+    scene.add(donut)
+
+
+  }
+  console.timeEnd('donut')
+});
+
+
+// const axesHelper = new THREE.AxesHelper()
+// scene.add(axesHelper)
 
 // Object
-// const geometry = new THREE.BoxGeometry(1, 1, 1)
-// const material = new THREE.MeshBasicMaterial({ color: 0xff0000 })
-// const mesh = new THREE.Mesh(geometry, material)
+const geometry = new THREE.BoxBufferGeometry(1, 1, 1, 5, 5, 5);
 
-// mesh.position.set(2, 1, 1)
-
-// scene.add(mesh)
-
-const axesHelper = new THREE.AxesHelper(1.5)
-scene.add(axesHelper)
-
-// Scale
-// mesh.scale.x = 1
-// mesh.scale.y = 2
-// mesh.scale.z = 2
-
-// Rotation
-
-// mesh.rotation.y = Math.PI
-// mesh.rotation.reorder('YXZ')
-// mesh.rotation.set(Math.PI * 0.25, Math.PI * 0.25, 1);
-// mesh.rotation.z = .5
-// mesh.rotation.x = .5
-
-// Objects
-
-const group = new THREE.Group()
-
-scene.add(group)
+const material = new THREE.MeshStandardMaterial();
+// LIGHTS
 
 
-const cube1 = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshBasicMaterial({color:'red'})
-)
-cube1.position.set(1, 2 , 1)
+const ambientLight = new THREE.AmbientLight("#fff", 0.5);
+scene.add(ambientLight);
 
-const cube2 = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshBasicMaterial({color:'white'})
-)
-cube2.position.set(3, 2 , 1)
+const pointLight = new THREE.PointLight("#fff", 0.5);
 
-const cube3 = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshBasicMaterial({color:'green'})
-)
-cube3.position.set(-1, 2 , 1)
+pointLight.position.x = 2;
+pointLight.position.y = 3;
+pointLight.position.z = 4;
+
+scene.add(pointLight);
+
+const mesh = new THREE.Mesh(geometry, material);
 
 
-group.add(cube1, cube2, cube3);
+gui.addColor(debugParameters, "color").onChange(() => {
+  material.color.set(debugParameters.color);
+});
 
-// Sizes
-const sizes = {
-  width: 800,
-  height: 600,
-}
+gui.add(debugParameters, "spin");
 
 // Camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
-camera.position.z = 5
-camera.position.y = 1
-camera.position.x = 1
-scene.add(camera)
+const camera = new THREE.PerspectiveCamera(
+  75,
+  sizes.width / sizes.height,
+  0.1,
+  100
+);
 
-// camera.lookAt(new THREE.Vector3(2, 1, 1))
+camera.position.z = 2;
+camera.lookAt(mesh.position);
+scene.add(camera);
 
-// camera.lookAt(mesh.position)
-
-
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
 // Renderer
 const renderer = new THREE.WebGLRenderer({
-  canvas: document.querySelector('canvas.webgl'),
-})
-renderer.setSize(sizes.width, sizes.height)
-renderer.render(scene, camera)
+  canvas: canvas,
+});
+renderer.setSize(sizes.width, sizes.height);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Animate
+const clock = new THREE.Clock();
+
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
+
+  // Update objects
+
+  controls.update();
+  // Render
+  renderer.render(scene, camera);
+
+  // Call tick again on the next frame
+  window.requestAnimationFrame(tick);
+};
+
+tick();
