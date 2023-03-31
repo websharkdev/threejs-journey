@@ -1,16 +1,16 @@
 * {
-  padding: 0;
-  margin: 0;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 html,
 body {
-  overflow: hidden;
+    overflow: hidden;
 }
 
 .webgl {
-  position: fixed;
-  left: 0;
-  top: 0;
-  outline: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    outline: none;
 }
