@@ -21,99 +21,43 @@ const scene = new THREE.Scene();
 */
 const textureLoader = new THREE.TextureLoader();
 
-// GALAXY
+// Objects
+const object1 = new THREE.Mesh(
+  new THREE.SphereGeometry(0.5, 16, 16),
+  new THREE.MeshBasicMaterial({ color: "#ff0000" })
+);
+object1.position.x = -2;
 
-const params = {
-  count: 1000,
-  size: 0.01,
-  radius: 5,
-  branches: 3,
-  spin: 1,
-  radnomness: 1,
-  radnomnessPower: 3,
-  colors: {
-    inside: '#ff6030',
-    outside: '#1b39b4',
-  }
-}
+const object2 = new THREE.Mesh(
+  new THREE.SphereGeometry(0.5, 16, 16),
+  new THREE.MeshBasicMaterial({ color: "#ff0000" })
+);
 
+const object3 = new THREE.Mesh(
+  new THREE.SphereGeometry(0.5, 16, 16),
+  new THREE.MeshBasicMaterial({ color: "#ff0000" })
+);
+object3.position.x = 2;
 
-let geometry = null
-let material = null
-let points = null
+scene.add(object1, object2, object3);
 
-const generateGalaxy = () => { 
-  if(points !== null) {
-    geometry.dispose()
-    material.dispose() 
-    scene.remove(points);
-  }
+// Raycaster
 
+// const raycasterOrigin = new THREE.Vector3(-10, 0 ,0)
+// const raycasterDirection = new THREE.Vector3(15, 0, 0)
 
-  geometry = new THREE.BufferGeometry()
-  const positions = new Float32Array(params.count * 3)
-  const colors = new Float32Array(params.count * 3)
-
-  const colorInside = new THREE.Color(params.colors.inside)
-  const colorOutside = new THREE.Color(params.colors.outside)
-
-  for (let i = 0; i < params.count; i++) { 
-
-    
-    
-    const i3 = i * 3
-    const radius = Math.random() * params.radius 
-    const spinAngle =  radius * params.spin
-    const branchAngle = (i % params.branches) / params.branches * Math.PI * 2
-    
-    const randomX = Math.pow(Math.random(), params.radnomnessPower) * (Math.random() < 0.5 ? 1.5 : -1.5) 
-    const randomY = Math.pow(Math.random(), params.radnomnessPower) * (Math.random() < 0.5 ? 1.5 : -1.5) 
-    const randomZ = Math.pow(Math.random(), params.radnomnessPower) * (Math.random() < 0.5 ? 1.5 : -1.5) 
-    
-    positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
-    positions[i3 + 1] = randomY;  
-    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
-    
-    // color
-    const mixedColor = colorInside.clone()
-    mixedColor.lerp(colorOutside, radius / params.radius)
-
-    colors[i3] = mixedColor.r
-    colors[i3 + 1] = mixedColor.g
-    colors[i3 + 2] = mixedColor.b
-  }
-
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-
-  // material
-
-  material = new THREE.PointsMaterial({
-    size: params.size,
-    sizeAttenuation: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    vertexColors: true
-  })
-
-  // points
-  points = new THREE.Points(geometry, material)
-
-  scene.add(points)
- }
+// raycasterDirection.normalize()
 
 
- gui.add(params, 'count', 100, 100000, 100).onFinishChange(generateGalaxy)
- gui.add(params, 'size', 0.01, 0.5, 0.01).onFinishChange(generateGalaxy)
- gui.add(params, 'radius', 0.001, 20, 1).onFinishChange(generateGalaxy)
- gui.add(params, "branches", 2, 20, 1).onFinishChange(generateGalaxy);
- gui.add(params, "spin", -5, 5, .1).onFinishChange(generateGalaxy);
- gui.add(params, "radnomness", 0, 5, 0.1).onFinishChange(generateGalaxy);
- gui.add(params, "radnomnessPower", 1, 10, 0.1).onFinishChange(generateGalaxy);
- gui.addColor(params.colors, "inside").onFinishChange(generateGalaxy);
- gui.addColor(params.colors, "outside").onFinishChange(generateGalaxy);
+// raycaster.set(raycasterOrigin, raycasterDirection)
 
- generateGalaxy()
+
+// const intersect = raycaster.intersectObject(object2)
+
+// const objectContainer = [object1, object2, object3]
+// const intersects = raycaster.intersectObject(objectContainer);
+
+const raycaster = new THREE.Raycaster(); 
 /**
  * Sizes
  */
@@ -164,11 +108,86 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
  * Animate
- */
+*/
+
+const mouse = new THREE.Vector2()
+let currentIntersect = null;
+
+window.addEventListener('mousemove', (e) => {
+  mouse.x = e.clientX / sizes.width * 2 - 1
+  mouse.y = -(e.clientY / sizes.height )* 2 + 1
+
+})
+
+window.addEventListener('click', (e) => {
+  if(currentIntersect) { 
+    console.log('click on a sphere');
+
+    if(currentIntersect.object === object1) {
+      console.log('sphere1');
+    }
+    if(currentIntersect.object === object2) {
+      console.log('sphere2');
+    }
+    if(currentIntersect.object === object3) {
+      console.log('sphere3');
+    }
+  }
+})
+
 const clock = new THREE.Clock();
+
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  object1.position.y = Math.sin(elapsedTime * 0.3) * 1.5;
+  object2.position.y = Math.sin(elapsedTime * 0.9) * 1.5;
+  object3.position.y = Math.sin(elapsedTime * 1.5) * 1.5;
+
+  // cast ray
+
+  raycaster.setFromCamera(mouse, camera);
+  const objectContainer = [object1, object2, object3];
+  const intersects = raycaster.intersectObjects(objectContainer);
+
+  for (const item of objectContainer) {
+    item.material.color.set("#ff0000");
+    // currentIntersect = item 
+  }
+  for (const intersect of intersects) {
+    intersect.object.material.color.set("#0000ff");
+    // currentIntersect = object
+  }
+
+  if(intersects.length) {
+    if(currentIntersect === null) {
+      console.log('mouse enter');
+    }
+    currentIntersect = intersects[0]
+  } else { 
+    if (currentIntersect) {
+      console.log("mouse leave");
+    }
+    currentIntersect = null
+  }
+
+  // const raycasterOrigin = new THREE.Vector3(-3, 0 ,0)
+  // const raycasterDirection = new THREE.Vector3(1, 0, 0).normalize();
+
+  // raycaster.set(raycasterOrigin, raycasterDirection)
+
+  // const objectContainer = [object1, object2, object3]
+  // const intersects = raycaster.intersectObjects(objectContainer);
+
+  // for (const item of objectContainer) {
+  //   item.material.color.set("#ff0000");
+  // }
+  // for (const intersect of intersects) {
+  //   intersect.object.material.color.set("#0000ff");
+
+  //   // console.log(intersect.object);
+  // }
 
   // Update controls
   controls.update();
