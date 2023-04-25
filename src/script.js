@@ -1,63 +1,92 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import * as dat from "dat.gui";
+import * as dat from "lil-gui";
+import { gsap } from "gsap";
 
-import "./style.css";
+/**
+ * Debug
+ */
+const gui = new dat.GUI();
+
+const parameters = {
+  materialColor: "#ffeded",
+};
+
+gui
+  .addColor(parameters, "materialColor")
+  .onChange(() => material.color.set(parameters.materialColor));
 
 /**
  * Base
  */
-// Debug
-const gui = new dat.GUI();
-
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
 
+
+// Textures
+const textureLoader = new THREE.TextureLoader()
+const gradientTexture = textureLoader.load('textures/gradients/3.jpg')
+gradientTexture.magFilter = THREE.NearestFilter
 /**
- * Textures
-*/
-const textureLoader = new THREE.TextureLoader();
+ * Test cube
+ */
+const material = new THREE.MeshToonMaterial({
+  color: parameters.materialColor,
+  gradientMap: gradientTexture,
+});
 
-// Objects
-const object1 = new THREE.Mesh(
-  new THREE.SphereGeometry(0.5, 16, 16),
-  new THREE.MeshBasicMaterial({ color: "#ff0000" })
+const objectsDistance = 4
+const mesh1 = new THREE.Mesh(new THREE.TorusGeometry(1, 0.4, 16, 60), material);
+
+const mesh2 = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 32), material);
+
+const mesh3 = new THREE.Mesh(
+  new THREE.TorusKnotGeometry(0.8, 0.35, 100, 16),
+  material
 );
-object1.position.x = -2;
-
-const object2 = new THREE.Mesh(
-  new THREE.SphereGeometry(0.5, 16, 16),
-  new THREE.MeshBasicMaterial({ color: "#ff0000" })
-);
-
-const object3 = new THREE.Mesh(
-  new THREE.SphereGeometry(0.5, 16, 16),
-  new THREE.MeshBasicMaterial({ color: "#ff0000" })
-);
-object3.position.x = 2;
-
-scene.add(object1, object2, object3);
-
-// Raycaster
-
-// const raycasterOrigin = new THREE.Vector3(-10, 0 ,0)
-// const raycasterDirection = new THREE.Vector3(15, 0, 0)
-
-// raycasterDirection.normalize()
 
 
-// raycaster.set(raycasterOrigin, raycasterDirection)
+const sectionsMeshes = [mesh1, mesh2, mesh3]
 
+scene.add(mesh1, mesh2, mesh3);
 
-// const intersect = raycaster.intersectObject(object2)
+sectionsMeshes.map((mesh, index) => {
+  mesh.position.y = -objectsDistance * index;
+  mesh.position.x = index % 2 ? -2 : 2
+})
 
-// const objectContainer = [object1, object2, object3]
-// const intersects = raycaster.intersectObject(objectContainer);
+// Particles
+const particlesCount = 200
+const positions = new Float32Array(particlesCount * 3)
 
-const raycaster = new THREE.Raycaster(); 
+for (let i = 0; i < particlesCount; i++) {
+  positions[i * 3 + 0] = (Math.random() -.5) * 10
+  positions[i * 3 + 1] =
+    objectsDistance * 0.5 - Math.random() * objectsDistance * sectionsMeshes.length
+  positions[i * 3 + 2] = (Math.random() -.5) * 10
+  
+}
+
+const particlesGeometry = new THREE.BufferGeometry()
+particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+
+const particlesMaterial = new THREE.PointsMaterial({
+  color: parameters.materialColor,
+  sizeAttenuation: true,
+  size: .03
+})
+
+const particles = new THREE.Points(particlesGeometry, particlesMaterial)
+scene.add(particles)
+// const particles = new THREE.
+
+// light
+const directionalLight = new THREE.DirectionalLight("#ffffff", 1);
+directionalLight.position.set(1, 1, 0);
+
+scene.add(directionalLight);
 /**
  * Sizes
  */
@@ -80,27 +109,60 @@ window.addEventListener("resize", () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
+// SCROLL
+let scrollY = window.scrollY
+let currentSection = 0
+
+window.addEventListener('scroll', () => {
+  scrollY = window.scrollY;
+
+  const newSection = Math.round(scrollY / sizes.height)
+
+  if(newSection !== currentSection) {
+    currentSection = newSection
+    
+    gsap.to(sectionsMeshes[currentSection].scale, {
+      duration: 1.5,
+      ease: "power2.inOut",
+    });
+  }
+})
+
+
+// cursor
+
+const cursor = {
+  x: 0,
+  y: 0,
+}
+
+
+window.addEventListener('mousemove', (e) => {
+  cursor.x = e.clientX / sizes.width - .5
+  cursor.y = e.clientY / sizes.height - .5
+})
 /**
  * Camera
- */
+*/
+
+// GROUP
+const cameraGroup = new THREE.Group()
+scene.add(cameraGroup)
 // Base camera
 const camera = new THREE.PerspectiveCamera(
-  75,
+  35,
   sizes.width / sizes.height,
   0.1,
   100
 );
-camera.position.z = 3;
-scene.add(camera);
-
-// Controls
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true;
+camera.position.z = 6;
+cameraGroup.add(camera);
 
 /**
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
+  alpha: true,
   canvas: canvas,
 });
 renderer.setSize(sizes.width, sizes.height);
@@ -108,89 +170,28 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
  * Animate
-*/
-
-const mouse = new THREE.Vector2()
-let currentIntersect = null;
-
-window.addEventListener('mousemove', (e) => {
-  mouse.x = e.clientX / sizes.width * 2 - 1
-  mouse.y = -(e.clientY / sizes.height )* 2 + 1
-
-})
-
-window.addEventListener('click', (e) => {
-  if(currentIntersect) { 
-    console.log('click on a sphere');
-
-    if(currentIntersect.object === object1) {
-      console.log('sphere1');
-    }
-    if(currentIntersect.object === object2) {
-      console.log('sphere2');
-    }
-    if(currentIntersect.object === object3) {
-      console.log('sphere3');
-    }
-  }
-})
-
+ */
 const clock = new THREE.Clock();
-
-
+let previesTime = 0
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - previesTime
+  previesTime = elapsedTime 
+  // animate camera
+  camera.position.y = - scrollY / sizes.height * objectsDistance;
 
-  object1.position.y = Math.sin(elapsedTime * 0.3) * 1.5;
-  object2.position.y = Math.sin(elapsedTime * 0.9) * 1.5;
-  object3.position.y = Math.sin(elapsedTime * 1.5) * 1.5;
+  // parallax
+  const parallaxX = -cursor.x
+  const parallaxY = cursor.y
 
-  // cast ray
+  cameraGroup.position.x += (parallaxX - cameraGroup.position.x) * .1 
+  cameraGroup.position.y += (parallaxY - cameraGroup.position.y) * .1 
 
-  raycaster.setFromCamera(mouse, camera);
-  const objectContainer = [object1, object2, object3];
-  const intersects = raycaster.intersectObjects(objectContainer);
-
-  for (const item of objectContainer) {
-    item.material.color.set("#ff0000");
-    // currentIntersect = item 
+  // animate meshes
+  for(const mesh of sectionsMeshes) {
+    mesh.rotation.x = elapsedTime * 0.2;
+    mesh.rotation.y = elapsedTime * 0.12;
   }
-  for (const intersect of intersects) {
-    intersect.object.material.color.set("#0000ff");
-    // currentIntersect = object
-  }
-
-  if(intersects.length) {
-    if(currentIntersect === null) {
-      console.log('mouse enter');
-    }
-    currentIntersect = intersects[0]
-  } else { 
-    if (currentIntersect) {
-      console.log("mouse leave");
-    }
-    currentIntersect = null
-  }
-
-  // const raycasterOrigin = new THREE.Vector3(-3, 0 ,0)
-  // const raycasterDirection = new THREE.Vector3(1, 0, 0).normalize();
-
-  // raycaster.set(raycasterOrigin, raycasterDirection)
-
-  // const objectContainer = [object1, object2, object3]
-  // const intersects = raycaster.intersectObjects(objectContainer);
-
-  // for (const item of objectContainer) {
-  //   item.material.color.set("#ff0000");
-  // }
-  // for (const intersect of intersects) {
-  //   intersect.object.material.color.set("#0000ff");
-
-  //   // console.log(intersect.object);
-  // }
-
-  // Update controls
-  controls.update();
 
   // Render
   renderer.render(scene, camera);
