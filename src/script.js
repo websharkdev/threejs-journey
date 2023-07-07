@@ -30,42 +30,13 @@ const flagTexture = textureLoader.load('/textures/flag-ukraine.jpg');
 const geometry = new THREE.PlaneGeometry(1, 1, 32, 32);
 
 // Material
-
-// const material = new THREE.RawShaderMaterial({
-//   vertexShader: testVertexShader,
-//   fragmentShader: testFragmentShader,
-//   uniforms: {
-//     uFrequency: {
-//       value: new THREE.Vector2(10, 5),
-//     },
-//     uTime: { value: 0 },
-//     uColor: { value: new THREE.Color("#ff0") },
-//     uTexture: { value: flagTexture },
-//   },
-// });
 const material = new THREE.ShaderMaterial({
   vertexShader: testVertexShader,
   fragmentShader: testFragmentShader,
-  uniforms: {
-    uFrequency: {
-      value: new THREE.Vector2(10, 5),
-    },
-    uTime: { value: 0 },
-    uColor: { value: new THREE.Color("#ff0") },
-    uTexture: { value: flagTexture },
-  },
 });
-
-gui.add(material.uniforms.uFrequency.value, 'x').min(0).max(20).step(0.01).name('uFrequency-X')
-gui.add(material.uniforms.uFrequency.value, 'y').min(0).max(20).step(0.01).name('uFrequency-Y')
-// gui
-//   .add(material.uniforms.uColor.value, "color")
-//   .name("uColor");
 
 // Mesh
 const mesh = new THREE.Mesh(geometry, material);
-
-mesh.scale.y = 2/3
 
 scene.add(mesh);
 
@@ -124,7 +95,6 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
-  material.uniforms.uTime.value = elapsedTime
   // Update controls
   controls.update();
 
