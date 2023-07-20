@@ -1,12 +1,8 @@
-import galaxyVertexShader from "./shaders/galaxy/vertex.glsl";
-import galaxyFragmentShader from "./shaders/galaxy/fragment.glsl";
-import * as dat from "lil-gui";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import * as dat from "lil-gui";
 
-import "./style.css";
-
-THREE.ColorManagement.enabled = false;
 /**
  * Base
  */
@@ -20,121 +16,181 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 /**
- * Textures
+ * Loaders
  */
 const textureLoader = new THREE.TextureLoader();
+const gltfLoader = new GLTFLoader();
+const cubeTextureLoader = new THREE.CubeTextureLoader();
 
-// GALAXY
-
-const params = {
-  count: 250000,
-  size: 0.005,
-  radius: 5,
-  spin: 1,
-  branches: 6,
-  randomness: 0.5,
-  randomnessPower: 3,
-  colors: {
-    inside: "#ff6030",
-    outside: "#1b39b4",
-  },
-};
-
-let geometry = null;
-let material = null;
-let points = null;
-
-const generateGalaxy = () => {
-  if (points !== null) {
-    geometry.dispose();
-    material.dispose();
-    scene.remove(points);
-  }
-
-  geometry = new THREE.BufferGeometry();
-
-  const positions = new Float32Array(params.count * 3);
-  const colors = new Float32Array(params.count * 3);
-  const randomness = new Float32Array(params.count * 3);
-  const scales = new Float32Array(params.count * 1);
-
-  const colorInside = new THREE.Color(params.colors.inside);
-  const colorOutside = new THREE.Color(params.colors.outside);
-
-  for (let i = 0; i < params.count; i++) {
-    const i3 = i * 3;
-    const radius = Math.random() * params.radius;
-    const branchAngle = ((i % params.branches) / params.branches) * Math.PI * 2;
-
-   const randomX =
-     Math.pow(Math.random(), params.randomnessPower) *
-     (Math.random() < 0.5 ? 1 : -1) *
-     params.randomness *
-     radius;
-   const randomY =
-     Math.pow(Math.random(), params.randomnessPower) *
-     (Math.random() < 0.5 ? 1 : -1) *
-     params.randomness *
-     radius;
-   const randomZ =
-     Math.pow(Math.random(), params.randomnessPower) *
-     (Math.random() < 0.5 ? 1 : -1) *
-     params.randomness *
-     radius;
-
-    positions[i3] = Math.cos(branchAngle) * radius;
-    positions[i3 + 1] = 0;
-    positions[i3 + 2] = Math.sin(branchAngle) * radius;
-
-    randomness[i3] = randomX;
-    randomness[i3 + 1] = randomY;
-    randomness[i3 + 2] = randomZ;
-
-    // color
-    const mixedColor = colorInside.clone();
-    mixedColor.lerp(colorOutside, radius / params.radius);
-
-    colors[i3] = mixedColor.r;
-    colors[i3 + 1] = mixedColor.g;
-    colors[i3 + 2] = mixedColor.b;
-
-    // scale
-
-    scales[i] = Math.random();
-  }
-
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  geometry.setAttribute("aRandomness", new THREE.BufferAttribute(randomness, 3));
-  geometry.setAttribute("aScale", new THREE.BufferAttribute(scales, 1));
-
-  // material
-
-  material = new THREE.ShaderMaterial({
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    vertexColors: true,
-    vertexShader: galaxyVertexShader,
-    fragmentShader: galaxyFragmentShader,
-    uniforms: {
-      uTime: {value: 0},
-      uSize: { value: 30 * renderer.getPixelRatio() },
-    },
+/**
+ * Update all materials
+ */
+const updateAllMaterials = () => {
+  scene.traverse((child) => {
+    if (
+      child instanceof THREE.Mesh &&
+      child.material instanceof THREE.MeshStandardMaterial
+    ) {
+      child.material.envMapIntensity = 1;
+      child.material.needsUpdate = true;
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
   });
-
-  // points
-  points = new THREE.Points(geometry, material);
-
-  scene.add(points);
 };
 
-gui.add(params, "count", 100, 1000000, 100).onFinishChange(generateGalaxy);
-gui.add(params, "radius", 0.01, 20, 0.01).onFinishChange(generateGalaxy);
-gui.add(params, "branches", 2, 20, 1).onFinishChange(generateGalaxy);
-gui.add(params, "randomness", 0, 2, 0.001).onFinishChange(generateGalaxy);
-gui.add(params, "randomnessPower", 1, 10, 0.001).onFinishChange(generateGalaxy);
-gui.addColor(params.colors, "inside").onFinishChange(generateGalaxy);
-gui.addColor(params.colors, "outside").onFinishChange(generateGalaxy);
+/**
+ * Environment map
+ */
+const environmentMap = cubeTextureLoader.load([
+  "/textures/environmentMaps/0/px.jpg",
+  "/textures/environmentMaps/0/nx.jpg",
+  "/textures/environmentMaps/0/py.jpg",
+  "/textures/environmentMaps/0/ny.jpg",
+  "/textures/environmentMaps/0/pz.jpg",
+  "/textures/environmentMaps/0/nz.jpg",
+]);
+
+scene.background = environmentMap;
+scene.environment = environmentMap;
+
+/**
+ * Material
+ */
+
+// Textures
+const mapTexture = textureLoader.load("/models/LeePerrySmith/color.jpg");
+mapTexture.colorSpace = THREE.SRGBColorSpace;
+const normalTexture = textureLoader.load("/models/LeePerrySmith/normal.jpg");
+
+// Material
+
+const material = new THREE.MeshStandardMaterial({
+  map: mapTexture,
+  normalMap: normalTexture,
+});
+
+const customUniforms = {
+  uTime: { value: 0 },
+};
+
+const depthMaterial = new THREE.MeshDepthMaterial({
+  depthPacking: THREE.RGBADepthPacking,
+});
+
+material.onBeforeCompile = (shader) => {
+  shader.uniforms.uTime = customUniforms.uTime;
+  shader.vertexShader = shader.vertexShader.replace(
+    "#include <common>",
+    `
+      #include <common>
+      
+      uniform float uTime;
+
+      mat2 get2dRotateMatrix(float _angle) {
+        return mat2(cos(_angle), - sin(_angle), sin(_angle), cos(_angle));
+      }
+
+    `
+  );
+
+  
+  shader.vertexShader = shader.vertexShader.replace(
+    "#include <beginnormal_vertex>",
+    `
+      #include <beginnormal_vertex>
+      float angle = (cos(position.y + uTime) * .2) * 0.9;
+
+      mat2 rotateMatrix = get2dRotateMatrix(angle);
+
+      objectNormal.xz = rotateMatrix * objectNormal.xz;
+
+    `
+  );
+
+
+  shader.vertexShader = shader.vertexShader.replace(
+    "#include <begin_vertex>",
+    `
+      #include <begin_vertex>
+      // float angle = (cos(position.y + uTime) * .2) * 0.9;
+
+      // mat2 rotateMatrix = get2dRotateMatrix(angle);
+
+      transformed.xz = rotateMatrix * transformed.xz;
+
+    `
+  );
+};
+
+depthMaterial.onBeforeCompile = (shader) => {
+  shader.uniforms.uTime = customUniforms.uTime;
+  shader.vertexShader = shader.vertexShader.replace(
+    "#include <common>",
+    `
+      #include <common>
+      
+      uniform float uTime;
+
+      mat2 get2dRotateMatrix(float _angle) {
+        return mat2(cos(_angle), - sin(_angle), sin(_angle), cos(_angle));
+      }
+
+    `
+  );
+  shader.vertexShader = shader.vertexShader.replace(
+    "#include <begin_vertex>",
+    `
+      #include <begin_vertex>
+      float angle = (cos(position.y + uTime) * .2) * 0.9;
+
+      mat2 rotateMatrix = get2dRotateMatrix(angle);
+
+      transformed.xz = rotateMatrix * transformed.xz;
+      
+    `
+  );
+}
+
+/**
+ * Models
+ */
+gltfLoader.load("/models/LeePerrySmith/LeePerrySmith.glb", (gltf) => {
+  // Model
+  const mesh = gltf.scene.children[0];
+  mesh.rotation.y = Math.PI * 0.5;
+  mesh.material = material;
+
+  mesh.customDepthMaterial = depthMaterial;
+  scene.add(mesh);
+
+  // Update materials
+  updateAllMaterials();
+});
+
+// PLANE
+
+const plane = new THREE.Mesh(
+  new THREE.PlaneBufferGeometry(15, 15, 15),
+  new THREE.MeshStandardMaterial()
+);
+
+plane.rotation.y = Math.PI;
+plane.position.y = -5;
+plane.position.z = 5;
+
+scene.add(plane);
+
+/**
+ * Lights
+ */
+const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
+directionalLight.castShadow = true;
+directionalLight.shadow.mapSize.set(1024, 1024);
+directionalLight.shadow.camera.far = 15;
+directionalLight.shadow.normalBias = 0.05;
+directionalLight.position.set(0.25, 2, -2.25);
+scene.add(directionalLight);
 
 /**
  * Sizes
@@ -168,9 +224,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.x = 3;
-camera.position.y = 3;
-camera.position.z = 3;
+camera.position.set(4, 1, -4);
 scene.add(camera);
 
 // Controls
@@ -182,11 +236,16 @@ controls.enableDamping = true;
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
+  antialias: true,
 });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.useLegacyLights = false;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-generateGalaxy();
 /**
  * Animate
  */
@@ -195,10 +254,7 @@ const clock = new THREE.Clock();
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // UPDATE MATEIRAL
-
-  material.uniforms.uTime.value = elapsedTime;
-
+  customUniforms.uTime.value = elapsedTime;
   // Update controls
   controls.update();
 
