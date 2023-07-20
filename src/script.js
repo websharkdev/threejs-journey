@@ -99,7 +99,7 @@ material.onBeforeCompile = (shader) => {
     "#include <beginnormal_vertex>",
     `
       #include <beginnormal_vertex>
-      float angle = (cos(position.y + uTime) * .2) * 0.9;
+      float angle = uTime * .2;
 
       mat2 rotateMatrix = get2dRotateMatrix(angle);
 
@@ -113,7 +113,7 @@ material.onBeforeCompile = (shader) => {
     "#include <begin_vertex>",
     `
       #include <begin_vertex>
-      // float angle = (cos(position.y + uTime) * .2) * 0.9;
+      // float angle = uTime * .2;
 
       // mat2 rotateMatrix = get2dRotateMatrix(angle);
 
@@ -142,7 +142,7 @@ depthMaterial.onBeforeCompile = (shader) => {
     "#include <begin_vertex>",
     `
       #include <begin_vertex>
-      float angle = (cos(position.y + uTime) * .2) * 0.9;
+      float angle = uTime * .2;
 
       mat2 rotateMatrix = get2dRotateMatrix(angle);
 
