@@ -1,12 +1,20 @@
-import galaxyVertexShader from "./shaders/galaxy/vertex.glsl";
-import galaxyFragmentShader from "./shaders/galaxy/fragment.glsl";
-import * as dat from "lil-gui";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import * as dat from "lil-gui";
 
-import "./style.css";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
+import { DotScreenPass } from "three/examples/jsm/postprocessing/DotScreenPass";
+import { GlitchPass } from "three/examples/jsm/postprocessing/GlitchPass";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
+import { RGBShiftShader } from "three/examples/jsm/shaders/RGBShiftShader";
 
-THREE.ColorManagement.enabled = false;
+import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass";
+
+
+
 /**
  * Base
  */
@@ -20,121 +28,66 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 /**
- * Textures
+ * Loaders
  */
+const gltfLoader = new GLTFLoader();
+const cubeTextureLoader = new THREE.CubeTextureLoader();
 const textureLoader = new THREE.TextureLoader();
 
-// GALAXY
 
-const params = {
-  count: 250000,
-  size: 0.005,
-  radius: 5,
-  spin: 1,
-  branches: 6,
-  randomness: 0.5,
-  randomnessPower: 3,
-  colors: {
-    inside: "#ff6030",
-    outside: "#1b39b4",
-  },
-};
-
-let geometry = null;
-let material = null;
-let points = null;
-
-const generateGalaxy = () => {
-  if (points !== null) {
-    geometry.dispose();
-    material.dispose();
-    scene.remove(points);
-  }
-
-  geometry = new THREE.BufferGeometry();
-
-  const positions = new Float32Array(params.count * 3);
-  const colors = new Float32Array(params.count * 3);
-  const randomness = new Float32Array(params.count * 3);
-  const scales = new Float32Array(params.count * 1);
-
-  const colorInside = new THREE.Color(params.colors.inside);
-  const colorOutside = new THREE.Color(params.colors.outside);
-
-  for (let i = 0; i < params.count; i++) {
-    const i3 = i * 3;
-    const radius = Math.random() * params.radius;
-    const branchAngle = ((i % params.branches) / params.branches) * Math.PI * 2;
-
-   const randomX =
-     Math.pow(Math.random(), params.randomnessPower) *
-     (Math.random() < 0.5 ? 1 : -1) *
-     params.randomness *
-     radius;
-   const randomY =
-     Math.pow(Math.random(), params.randomnessPower) *
-     (Math.random() < 0.5 ? 1 : -1) *
-     params.randomness *
-     radius;
-   const randomZ =
-     Math.pow(Math.random(), params.randomnessPower) *
-     (Math.random() < 0.5 ? 1 : -1) *
-     params.randomness *
-     radius;
-
-    positions[i3] = Math.cos(branchAngle) * radius;
-    positions[i3 + 1] = 0;
-    positions[i3 + 2] = Math.sin(branchAngle) * radius;
-
-    randomness[i3] = randomX;
-    randomness[i3 + 1] = randomY;
-    randomness[i3 + 2] = randomZ;
-
-    // color
-    const mixedColor = colorInside.clone();
-    mixedColor.lerp(colorOutside, radius / params.radius);
-
-    colors[i3] = mixedColor.r;
-    colors[i3 + 1] = mixedColor.g;
-    colors[i3 + 2] = mixedColor.b;
-
-    // scale
-
-    scales[i] = Math.random();
-  }
-
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  geometry.setAttribute("aRandomness", new THREE.BufferAttribute(randomness, 3));
-  geometry.setAttribute("aScale", new THREE.BufferAttribute(scales, 1));
-
-  // material
-
-  material = new THREE.ShaderMaterial({
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    vertexColors: true,
-    vertexShader: galaxyVertexShader,
-    fragmentShader: galaxyFragmentShader,
-    uniforms: {
-      uTime: {value: 0},
-      uSize: { value: 30 * renderer.getPixelRatio() },
-    },
+/**
+ * Update all materials
+ */
+const updateAllMaterials = () => {
+  scene.traverse((child) => {
+    if (
+      child instanceof THREE.Mesh &&
+      child.material instanceof THREE.MeshStandardMaterial
+    ) {
+      child.material.envMapIntensity = 2.5;
+      child.material.needsUpdate = true;
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
   });
-
-  // points
-  points = new THREE.Points(geometry, material);
-
-  scene.add(points);
 };
 
-gui.add(params, "count", 100, 1000000, 100).onFinishChange(generateGalaxy);
-gui.add(params, "radius", 0.01, 20, 0.01).onFinishChange(generateGalaxy);
-gui.add(params, "branches", 2, 20, 1).onFinishChange(generateGalaxy);
-gui.add(params, "randomness", 0, 2, 0.001).onFinishChange(generateGalaxy);
-gui.add(params, "randomnessPower", 1, 10, 0.001).onFinishChange(generateGalaxy);
-gui.addColor(params.colors, "inside").onFinishChange(generateGalaxy);
-gui.addColor(params.colors, "outside").onFinishChange(generateGalaxy);
+/**
+ * Environment map
+ */
+const environmentMap = cubeTextureLoader.load([
+  "/textures/environmentMaps/0/px.jpg",
+  "/textures/environmentMaps/0/nx.jpg",
+  "/textures/environmentMaps/0/py.jpg",
+  "/textures/environmentMaps/0/ny.jpg",
+  "/textures/environmentMaps/0/pz.jpg",
+  "/textures/environmentMaps/0/nz.jpg",
+]);
+
+scene.background = environmentMap;
+scene.environment = environmentMap;
+
+/**
+ * Models
+ */
+gltfLoader.load("/models/DamagedHelmet/glTF/DamagedHelmet.gltf", (gltf) => {
+  gltf.scene.scale.set(2, 2, 2);
+  gltf.scene.rotation.y = Math.PI * 0.5;
+  scene.add(gltf.scene);
+
+  updateAllMaterials();
+});
+
+/**
+ * Lights
+ */
+const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
+directionalLight.castShadow = true;
+directionalLight.shadow.mapSize.set(1024, 1024);
+directionalLight.shadow.camera.far = 15;
+directionalLight.shadow.normalBias = 0.05;
+directionalLight.position.set(0.25, 3, -2.25);
+scene.add(directionalLight);
 
 /**
  * Sizes
@@ -156,6 +109,11 @@ window.addEventListener("resize", () => {
   // Update renderer
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  // Update composer
+  effectComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  effectComposer.setSize(sizes.width, sizes.height);
+
 });
 
 /**
@@ -168,9 +126,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.x = 3;
-camera.position.y = 3;
-camera.position.z = 3;
+camera.position.set(4, 1, -4);
 scene.add(camera);
 
 // Controls
@@ -182,11 +138,207 @@ controls.enableDamping = true;
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
+  antialias: true,
 });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.useLegacyLights = false;
+renderer.toneMapping = THREE.ReinhardToneMapping;
+renderer.toneMappingExposure = 1.5;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-generateGalaxy();
+
+/**
+ * POST PROCESSING
+*/
+// RENDER TARGET
+
+let RenderTargetClass = null;
+
+if(renderer.capabilities.isWebGL2 && renderer.getPixelRatio() === 1) {
+    RenderTargetClass = THREE.WebGLMultipleRenderTarget
+} else {
+    RenderTargetClass = THREE.WebGLRenderTarget
+}
+
+const renderTarget = new RenderTargetClass(600, 400, {
+  minFilter: THREE.LinearFilter,
+  magFilter: THREE.LinearFilter,
+  format: THREE.RGBAFormat,
+  encoding: THREE.sRGBEncoding,
+});
+
+const effectComposer = new EffectComposer(renderer, renderTarget);
+
+effectComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+effectComposer.setSize(sizes.width, sizes.height);
+
+const renderPass = new RenderPass(scene, camera)
+effectComposer.addPass(renderPass)
+
+
+const dotScreenPass = new DotScreenPass()
+dotScreenPass.enabled = false
+effectComposer.addPass(dotScreenPass)
+
+const unrealBloomPass = new UnrealBloomPass();
+unrealBloomPass.enabled = false
+
+unrealBloomPass.strength = .3
+unrealBloomPass.radius = 1
+unrealBloomPass.threshold = .6
+
+gui.add(unrealBloomPass, "enabled").name("unreal bloom");
+gui
+  .add(unrealBloomPass, "strength")
+  .min(0)
+  .max(2)
+  .step(0.001)
+  .name("UB strength");
+gui.add(unrealBloomPass, "radius").min(0).max(2).step(0.001).name("UB radius");
+gui
+  .add(unrealBloomPass, "threshold")
+  .min(0)
+  .max(1)
+  .step(0.001)
+  .name("UB threshold");
+
+effectComposer.addPass(unrealBloomPass);
+
+const glitchPass = new GlitchPass();
+glitchPass.enabled = false;
+gui.add(glitchPass, "enabled").name("glitch");
+
+// glitchPass.goWild = true
+effectComposer.addPass(glitchPass);
+
+const shaderPass = new ShaderPass(RGBShiftShader);
+shaderPass.enabled = false;
+// shaderPass.enabled = false;
+
+// glitchPass.goWild = true
+
+
+effectComposer.addPass(shaderPass);
+
+if(renderer.getPixelRatio() === 1 && !renderer.capabilities.isWebGL2) {
+    const smaaPass = new SMAAPass()
+    effectComposer.addPass(smaaPass);
+}
+
+// TintPass
+
+const TintShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uTint: { value: null },
+  },
+  vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+
+            vUv = uv;
+
+        }
+    `,
+  fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform vec3 uTint;
+        varying vec2 vUv;
+        void main() {
+
+            vec4 color = texture2D(tDiffuse, vUv);
+            color.rgb += uTint;
+            gl_FragColor = color;
+        }
+    `,
+};
+
+const tintPass = new ShaderPass(TintShader);
+tintPass.material.uniforms.uTint.value = new THREE.Color('#482344')
+
+gui.addColor(tintPass.material.uniforms.uTint, 'value');
+tintPass.enabled = false
+effectComposer.addPass(tintPass)
+
+// DisplacementPass
+
+const DisplacementShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uTime: { value: 0 },
+  },
+  vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+
+            vUv = uv;
+
+        }
+    `,
+  fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float uTime;
+        varying vec2 vUv;
+        void main() {
+            vec2 newUv = vec2(vUv.x, vUv.y + sin(vUv.x * 10.0 + uTime) * .1);
+
+            vec4 color = texture2D(tDiffuse, newUv);
+            gl_FragColor = color;
+        }
+    `,
+};
+
+const displacementPass = new ShaderPass(DisplacementShader);
+displacementPass.enabled = false
+effectComposer.addPass(displacementPass);
+
+// DisplacementPass
+
+const Displacement2Shader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uNormalMap: { value: null },
+  },
+  vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+
+            vUv = uv;
+
+        }
+    `,
+  fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform sampler2D uNormalMap;
+        varying vec2 vUv;
+        void main() {
+            vec3 normalColor = texture2D(uNormalMap, vUv).xyz * 2.0 - 1.0;
+            vec2 newUv = vUv + normalColor.xy * .1;
+
+            vec4 color = texture2D(tDiffuse, newUv);
+
+            vec3 lightDirection = normalize(vec3(- 1.0, 1.0, 0.0));
+            float lightness = clamp(dot(normalColor, lightDirection), 0.0, 1.0);
+
+            color.rgb += lightness * .5; 
+
+            gl_FragColor = color;
+        }
+    `,
+};
+
+const displacement2Pass = new ShaderPass(Displacement2Shader);
+
+displacement2Pass.material.uniforms.uNormalMap.value = textureLoader.load(
+  "/textures/interfaceNormalMap.png"
+);
+effectComposer.addPass(displacement2Pass);
+
 /**
  * Animate
  */
@@ -194,16 +346,14 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
-
-  // UPDATE MATEIRAL
-
-  material.uniforms.uTime.value = elapsedTime;
+  displacementPass.material.uniforms.uTime.value = elapsedTime;
 
   // Update controls
   controls.update();
 
   // Render
-  renderer.render(scene, camera);
+  //   renderer.render(scene, camera);
+  effectComposer.render()
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
