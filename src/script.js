@@ -7,24 +7,27 @@ import { gsap } from "gsap";
 /**
  * Loaders
  */
-const loadingBar = document.querySelector('.loading-bar')
+let sceneReady = false
+const loadingBar = document.querySelector(".loading-bar");
 
 const loadingManager = new THREE.LoadingManager(
   () => {
-    gsap.delayedCall(.5, () => {
-        
-    gsap.to(overlayMaterial.uniforms.uAlpha, {
-      duration: 3,
-      value: 0,
-      delay: 1,
+    gsap.delayedCall(0.5, () => {
+      gsap.to(overlayMaterial.uniforms.uAlpha, {
+        duration: 3,
+        value: 0,
+        delay: 1,
+      });
+      loadingBar.classList.add("ended");
     });
-    loadingBar.classList.add("ended");
-    })
+
+    
+    window.setTimeout(() => {
+      sceneReady = true;
+    }, 2000);
   },
   (url, loaded, total) => {
-    loadingBar.style.transform = `scaleX(${loaded / total})`
-
-
+    loadingBar.style.transform = `scaleX(${loaded / total})`;
   }
 );
 const gltfLoader = new GLTFLoader(loadingManager);
@@ -78,6 +81,7 @@ scene.background = environmentMap;
 scene.environment = environmentMap;
 
 debugObject.envMapIntensity = 2.5;
+
 /**
  * Overlay
  */
@@ -109,15 +113,36 @@ scene.add(overlayMesh);
 /**
  * Models
  */
-gltfLoader.load("/models/FlightHelmet/glTF/FlightHelmet.gltf", (gltf) => {
-  gltf.scene.scale.set(10, 10, 10);
-  gltf.scene.position.set(0, -4, 0);
+gltfLoader.load("/models/DamagedHelmet/glTF/DamagedHelmet.gltf", (gltf) => {
+  
+  gltf.scene.scale.set(2.5, 2.5, 2.5);
   gltf.scene.rotation.y = Math.PI * 0.5;
   scene.add(gltf.scene);
 
   updateAllMaterials();
-//   overlayMaterial.uniforms.uAlpha.value = 0
+  //   overlayMaterial.uniforms.uAlpha.value = 0
 });
+
+/**
+ * Points of interest
+ */
+const raycaster = new THREE.Raycaster();
+const points = [
+  {
+    position: new THREE.Vector3(1.55, 0.3, -0.6),
+    element: document.querySelector(".point-0"),
+  },
+  {
+    position: new THREE.Vector3(0.5, 0.8, -1.6),
+    element: document.querySelector(".point-1"),
+  },
+  {
+    position: new THREE.Vector3(1.6, -1.3, -0.7),
+    element: document.querySelector(".point-2"),
+  },
+];
+
+
 
 
 /**
@@ -191,6 +216,39 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const tick = () => {
   // Update controls
   controls.update();
+
+  // Go through each point
+  if (sceneReady) {
+    for (const point of points) {
+      const screenPosition = point.position.clone();
+      screenPosition.project(camera);
+
+      raycaster.setFromCamera(screenPosition, camera);
+
+      console.log(scene.children);
+
+      const intersects = raycaster.intersectObjects(scene.children, true);
+
+      if (intersects.length === 0) {
+        // Nothing intersecting
+        point.element.classList.add("visible");
+      } else {
+        const intersectionDistance = intersects[0].distance;
+        const pointDistance = point.position.distanceTo(camera.position);
+
+        if (intersectionDistance < pointDistance) {
+          point.element.classList.remove("visible");
+        } else {
+          point.element.classList.add("visible");
+        }
+      }
+
+      const translateX = screenPosition.x * sizes.width * 0.5;
+      const translateY = -screenPosition.y * sizes.height * 0.5;
+      point.element.style.transform = `translateX(${translateX}px) translateY(${translateY}px)`;
+    }
+
+  }
 
   // Render
   renderer.render(scene, camera);
