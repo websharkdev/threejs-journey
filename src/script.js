@@ -4,6 +4,12 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 
+import firefliesVertexShader from './shaders/fireflies/vertex.glsl'
+import firefliesVertexFragment from './shaders/fireflies/fragment.glsl'
+
+import portalVertexShader from './shaders/portal/vertex.glsl'
+import portalVertexFragment from './shaders/portal/fragment.glsl'
+
 /**
  * Base
  */
@@ -53,11 +59,34 @@ const polyLMaterial = new THREE.MeshBasicMaterial({
     color: 0xffffe5
 })
 
+debugOBJ.portalCStart = '#141414'
+debugOBJ.portalCEnd = '#fff'
 // portal material
-const portalLMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
-    side: THREE.DoubleSide,
-})
+const portalLMaterial = new THREE.ShaderMaterial({
+  vertexShader: portalVertexShader,
+  fragmentShader: portalVertexFragment,
+  uniforms: {
+    uTime: {
+      value: 0,
+    },
+    uCStart: {
+      value: new THREE.Color(debugOBJ.portalCStart),
+    },
+    uCEnd: {
+      value: new THREE.Color(debugOBJ.portalCEnd),
+    },
+  },
+});
+gui
+  .addColor(debugOBJ, "portalCEnd")
+  .onChange(() =>
+    portalLMaterial.uniforms.uCEnd.value.set(debugOBJ.portalCEnd)
+  );
+gui
+  .addColor(debugOBJ, "portalCStart")
+  .onChange(() =>
+    portalLMaterial.uniforms.uCStart.value.set(debugOBJ.portalCStart)
+  );
 
 
 gltfLoader.load("./portal.glb", (gltf) => {
@@ -86,20 +115,45 @@ gltfLoader.load("./portal.glb", (gltf) => {
 const firefliesGeometry = new THREE.BufferGeometry()
 const firefliesCount = 30
 const positionARR = new Float32Array(firefliesCount * 3)
+const scaleArr = new Float32Array(firefliesCount * 1)
 
 
-for(let i = 0; i < positionARR.length; i++) {
-    positionARR[i * 3 + 0] = (Math.random() - .5) * 4 
-    positionARR[i * 3 + 1] = Math.random() * 1.5
-    positionARR[i * 3 + 2] = (Math.random() - .5) * 4
+for (let i = 0; i < firefliesCount; i++) {
+  positionARR[i * 3 + 0] = (Math.random() - 0.5) * 4;
+  positionARR[i * 3 + 1] = Math.random() * 1.5;
+  positionARR[i * 3 + 2] = (Math.random() - 0.5) * 4;
+
+  scaleArr[i] = Math.random()
 }
 
-firefliesGeometry.setAttribute('position', new THREE.BufferAttribute(positionARR, 3))
 
-const firefliesMaterial = new THREE.PointsMaterial({
-    size: 0.1,
-    sizeAuttenuation: true
-})
+firefliesGeometry.setAttribute('position', new THREE.BufferAttribute(positionARR, 3))
+firefliesGeometry.setAttribute(
+  "aScale",
+  new THREE.BufferAttribute(scaleArr, 1)
+);
+
+
+const firefliesMaterial = new THREE.ShaderMaterial({
+  vertexShader: firefliesVertexShader,
+  fragmentShader: firefliesVertexFragment,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  transparent: true,
+  uniforms: {
+    uPixelRatio: {
+      value: Math.min(window.devicePixelRatio, 2),
+    },
+    uSize: {
+        value: 100
+    },
+    uTime: {
+        value: 0
+    }
+  },
+});
+
+gui.add(firefliesMaterial.uniforms.uSize, 'value').min(50).max(500).step(1)
 
 const fireflies = new THREE.Points(firefliesGeometry, firefliesMaterial)
 scene.add(fireflies)
@@ -125,6 +179,11 @@ window.addEventListener('resize', () =>
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+    firefliesMaterial.uniforms.uPixelRatio.value = Math.min(
+      window.devicePixelRatio,
+      2
+    );
 })
 
 /**
@@ -166,6 +225,8 @@ const clock = new THREE.Clock()
 const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
+    firefliesMaterial.uniforms.uTime.value = elapsedTime
+    portalLMaterial.uniforms.uTime.value = elapsedTime;
 
     // Update controls
     controls.update()
