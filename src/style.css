@@ -1,19 +1,28 @@
-*
-{
-    margin: 0;
-    padding: 0;
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto:wght@400;500;700&display=swap');
+
+* {
+    font-family: 'Montserrat', 'Roboto', sans-serif;
+    font-weight: 400;
 }
 
 html,
-body
-{
-    overflow: hidden;
-}
-
-.webgl
-{
+body,
+#root {
     position: fixed;
     top: 0;
     left: 0;
-    outline: none;
+    width: 100%;
+    height: 100%;
+    background: ivory;
+}
+
+.taplink>div {
+    color: #fff;
+    background: #141414;
+    border-radius: 30px;
+    width: max-content;
+    padding: 1.2rem 2.5rem;
+    overflow: hidden;
+    position: absolute;
+    user-select: none;
 }

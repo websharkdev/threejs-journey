@@ -1,10 +1,14 @@
-import glsl from 'vite-plugin-glsl'
+import react from '@vitejs/plugin-react'
 
 const isCodeSandbox = 'SANDBOX_URL' in process.env || 'CODESANDBOX_HOST' in process.env
 
 export default {
+    plugins:
+    [
+        react()
+    ],
     root: 'src/',
-    publicDir: '../static/',
+    publicDir: "../public/",
     base: './',
     server:
     {
@@ -16,9 +20,5 @@ export default {
         outDir: '../dist',
         emptyOutDir: true,
         sourcemap: true
-    },
-    plugins:
-    [
-        glsl()
-    ]
+    }
 }
