@@ -1,10 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto:wght@400;500;700&display=swap');
-
-* {
-    font-family: 'Montserrat', 'Roboto', sans-serif;
-    font-weight: 400;
-}
-
 html,
 body,
 #root {
@@ -16,13 +9,14 @@ body,
     background: ivory;
 }
 
-.taplink>div {
-    color: #fff;
-    background: #141414;
-    border-radius: 30px;
-    width: max-content;
-    padding: 1.2rem 2.5rem;
-    overflow: hidden;
-    position: absolute;
-    user-select: none;
+
+.loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: ivory;
+    justify-content: center;
+    align-items: center;
 }
