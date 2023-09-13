@@ -1,104 +1,81 @@
-import {
-  Center,
-  OrbitControls,
-  Text3D,
-  useMatcapTexture,
-} from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
-import { Perf } from "r3f-perf";
-import { useEffect, useRef, useState } from "react";
+import { Center, OrbitControls, Sparkles, shaderMaterial, useGLTF, useTexture } from '@react-three/drei'
+import portalVertexShader from './shaders/portal/vertex.glsl'
+import portalFragmentShader from './shaders/portal/fragment.glsl'
+import { Color } from 'three';
+import { useRef } from 'react';
+import { extend, useFrame } from '@react-three/fiber';
 
-// import { TorusGeometry } from "three";
 
-// const torusGeometry = new TorusGeometry(1, 0.6, 16, 32);
+
+const PortalMaterial = shaderMaterial(
+  {
+    uTime: 0,
+    uColorStart:  new Color("#fff"),
+    uColorEnd: new Color("#141414"),
+  },
+  portalVertexShader,
+  portalFragmentShader
+);
 
 export default function Experience() {
 
-  const [ matcapTexture ] = useMatcapTexture("4C4C4C_D2D2D2_8F8F8F_ACACAC", 256);
-    const [donutMT] = useMatcapTexture("4F439F_A28BE5_8570D6_7765C9", 256);
-    // const donutGRef = useRef()
-    const donutsRef = useRef([])
-    const [torusGeometry, setTorusGeometry] = useState()
-    const [torusMaterial, setTorusMaterial] = useState()
-    
-    // useEffect(() => {
-    //   torusMaterial.matcap = donutMT
-    //   torusMaterial.needsUpdate = true
-    // }, [])
+    const refSM = useRef()
+    const {nodes} = useGLTF('./model/portal.glb')
+    const texture = useTexture('./model/baked.jpg')
 
-    // useFrame((state, delta) => {
-    //   for(const donut of donutGRef.current.children) {
-    //     donut.rotation.y += delta * .2
-    //   }
-    // })
+    extend({PortalMaterial})
 
     useFrame((state, delta) => {
-      for (const donut of donutsRef.current) {
-        donut.rotation.y += delta * 0.2;
-      }
+      // refSM.current.uniforms.uTime.value = state.clock.elapsedTime
+      refSM.current.uTime += delta;
     })
 
-  return (
-    <>
-      <Perf position="top-left" />
+    return (
+      <>
+        <color args={["#201919"]} attach="background" />
 
-      <OrbitControls makeDefault />
+        <OrbitControls makeDefault />
 
-      <torusGeometry args={[1, 0.6, 16, 32]} ref={setTorusGeometry} />
-      <meshMatcapMaterial matcap={donutMT} ref={setTorusMaterial} />
-      <Center>
-        <Text3D
-          size={0.7}
-          height={0.2}
-          curveSegments={12}
-          bevelEnabled
-          bevelThickness={0.02}
-          bevelSize={0.025}
-          bevelOffset={0}
-          bevelSegments={5}
-          font={"./fonts/helvetiker_regular.typeface.json"}
-        >
-          Oleksii Bortnytskyi
-          <meshMatcapMaterial matcap={matcapTexture} />
-        </Text3D>
-      </Center>
+        <Center>
+          <mesh geometry={nodes.baked.geometry}>
+            <meshBasicMaterial map={texture} map-flipY={false} />
+          </mesh>
 
-      {/* <group ref={donutGRef}>
-        {[
-          [...Array(100)].map((item, id) => (
-            <mesh
-              position={[
-                (Math.random() - 0.5) * 10,
-                (Math.random() - 0.5) * 10,
-                (Math.random() - 0.5) * 10,
-              ]}
-              rotation={[Math.random() * Math.PI, Math.random() * Math.PI, 0]}
-              scale={0.2 + Math.random() * 0.2}
-              key={id}
-              geometry={torusGeometry}
-              material={torusMaterial}
-            />
-          )),
-        ]}
-      </group> */}
-
-      {[
-        [...Array(100)].map((item, id) => (
           <mesh
-            ref={(element) => donutsRef.current[id] = element}
-            position={[
-              (Math.random() - 0.5) * 10,
-              (Math.random() - 0.5) * 10,
-              (Math.random() - 0.5) * 10,
-            ]}
-            rotation={[Math.random() * Math.PI, Math.random() * Math.PI, 0]}
-            scale={0.2 + Math.random() * 0.2}
-            key={id}
-            geometry={torusGeometry}
-            material={torusMaterial}
+            geometry={nodes.poleLightA.geometry}
+            position={nodes.poleLightA.position}
+          >
+            <meshBasicMaterial color="#ffffe5" />
+          </mesh>
+
+          <mesh
+            geometry={nodes.poleLightB.geometry}
+            position={nodes.poleLightB.position}
+          >
+            <meshBasicMaterial color="#ffffe5" />
+          </mesh>
+
+          <mesh
+            geometry={nodes.portalLight.geometry}
+            position={nodes.portalLight.position}
+            rotation={nodes.portalLight.rotation}
+          >
+            {/* <shaderMaterial vertexShader={portalVertexShader} side='doubleside' fragmentShader={portalFragmentShader} ref={refSM} uniforms={{
+              uTime: {value: 0},
+              uColorStart: {value: new Color('#fff')},
+              uColorEnd: {value: new Color('#141414')},
+            }}/> */}
+            <portalMaterial ref={refSM} />
+          </mesh>
+
+          <Sparkles
+            size={4}
+            scale={[4, 2, 4]}
+            position={[0, 1, 0]}
+            speed={0.2}
+            count={40}
           />
-        )),
-      ]}
-    </>
-  );
+        </Center>
+      </>
+    );
 }
