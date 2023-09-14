@@ -1,81 +1,74 @@
-import { Center, OrbitControls, Sparkles, shaderMaterial, useGLTF, useTexture } from '@react-three/drei'
-import portalVertexShader from './shaders/portal/vertex.glsl'
-import portalFragmentShader from './shaders/portal/fragment.glsl'
-import { Color } from 'three';
-import { useRef } from 'react';
-import { extend, useFrame } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber'
+import { OrbitControls, meshBounds, useGLTF } from '@react-three/drei'
+import { useRef } from 'react'
+import { Color } from 'three'
 
+export default function Experience()
+{
+    const cube = useRef()
+    
+    const gamburgerM = useGLTF('./hamburger.glb')
 
-
-const PortalMaterial = shaderMaterial(
-  {
-    uTime: 0,
-    uColorStart:  new Color("#fff"),
-    uColorEnd: new Color("#141414"),
-  },
-  portalVertexShader,
-  portalFragmentShader
-);
-
-export default function Experience() {
-
-    const refSM = useRef()
-    const {nodes} = useGLTF('./model/portal.glb')
-    const texture = useTexture('./model/baked.jpg')
-
-    extend({PortalMaterial})
-
-    useFrame((state, delta) => {
-      // refSM.current.uniforms.uTime.value = state.clock.elapsedTime
-      refSM.current.uTime += delta;
+    useFrame((state, delta) =>
+    {
+        cube.current.rotation.y += delta * 0.2
     })
+
+    const eventHandler = (e) => { 
+        e.object.material.color.set(
+          `hsl(${Math.random() * 360}, 100%, 75%)`
+        );
+
+        
+     }
 
     return (
       <>
-        <color args={["#201919"]} attach="background" />
-
         <OrbitControls makeDefault />
 
-        <Center>
-          <mesh geometry={nodes.baked.geometry}>
-            <meshBasicMaterial map={texture} map-flipY={false} />
-          </mesh>
+        <directionalLight position={[1, 2, 3]} intensity={1.5} />
+        <ambientLight intensity={0.5} />
 
-          <mesh
-            geometry={nodes.poleLightA.geometry}
-            position={nodes.poleLightA.position}
-          >
-            <meshBasicMaterial color="#ffffe5" />
-          </mesh>
+        <primitive object={gamburgerM.scene} scale={.25} position-y={.5} onClick={(e) => {
+            e.stopPropagation()
+            console.log(e)
+        }}/>
 
-          <mesh
-            geometry={nodes.poleLightB.geometry}
-            position={nodes.poleLightB.position}
-          >
-            <meshBasicMaterial color="#ffffe5" />
-          </mesh>
+        <mesh
+          position-x={-2}
+          onClick={(e) => e.stopPropagation()}
+          onPointerLeave={() => {
+            document.body.style.cursor = "default";
+          }}
+          onPointerEnter={() => {
+            document.body.style.cursor = "pointer";
+          }}
+        >
+          <sphereGeometry />
+          <meshStandardMaterial color="orange" />
+        </mesh>
 
-          <mesh
-            geometry={nodes.portalLight.geometry}
-            position={nodes.portalLight.position}
-            rotation={nodes.portalLight.rotation}
-          >
-            {/* <shaderMaterial vertexShader={portalVertexShader} side='doubleside' fragmentShader={portalFragmentShader} ref={refSM} uniforms={{
-              uTime: {value: 0},
-              uColorStart: {value: new Color('#fff')},
-              uColorEnd: {value: new Color('#141414')},
-            }}/> */}
-            <portalMaterial ref={refSM} />
-          </mesh>
+        <mesh
+          ref={cube}
+          raycast={meshBounds}
+          position-x={2}
+          scale={1.5}
+          onClick={eventHandler}
+          onPointerLeave={() => {
+            document.body.style.cursor = "default";
+          }}
+          onPointerEnter={() => {
+            document.body.style.cursor = "pointer";
+          }}
+        >
+          <boxGeometry />
+          <meshStandardMaterial color="mediumpurple" />
+        </mesh>
 
-          <Sparkles
-            size={4}
-            scale={[4, 2, 4]}
-            position={[0, 1, 0]}
-            speed={0.2}
-            count={40}
-          />
-        </Center>
+        <mesh position-y={-1} rotation-x={-Math.PI * 0.5} scale={10}>
+          <planeGeometry />
+          <meshStandardMaterial color="greenyellow" />
+        </mesh>
       </>
     );
 }
