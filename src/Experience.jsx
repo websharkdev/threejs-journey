@@ -5,16 +5,24 @@ import { useControls } from 'leva'
 import { BlendFunction, GlitchMode } from 'postprocessing'
 import { Perf } from 'r3f-perf'
 import { useRef } from 'react'
+import Drunk from './Drunk'
 
 export default function Experience()
 {
     // const cube = useRef()
+    const  drunkREF = useRef()
     
     const gamburgerM = useGLTF('./hamburger.glb')
 
+    const { frequency, amplitude, time } = useControls("DrunkEffect", {
+      frequency: { value: 10, min: 0, max: 100 },
+      amplitude: { value: 0.1, min: 0, max: 1},
+      // time: 0
+    });
+
     // useFrame((state, delta) =>
     // {
-    //     cube.current.rotation.y += delta * 0.2
+    //  console.log(drunkREF.current.uniforms)
     // })
 
     // const eventHandler = (e) => { 
@@ -79,6 +87,7 @@ export default function Experience()
 
         <EffectComposer>
           {/* <EffectComposer multisampling={0}> */}
+          {/* <Noise blendFunction={BlendFunction.DARKEN} opacity={.7} premultiply /> */}
           {/* <Vignette offset={.3} darkness={.9}/>
           <Glitch
             delay={[0.5, 1]}
@@ -90,6 +99,14 @@ export default function Experience()
           <Bloom mipmapBlur />
           <DepthOfField focusDistance={.025} focalLength={.025}  bokehScale={6} /> */}
           {/* <SSR {...effects} /> */}
+          {/* <Drunk /> */}
+          <Drunk
+            ref={drunkREF}
+            frequency={frequency}
+            amplitude={amplitude}
+            blendFunction={BlendFunction.DARKEN}
+            time={time}
+          />
         </EffectComposer>
         <mesh
           castShadow
@@ -103,7 +120,8 @@ export default function Experience()
           // }}
         >
           <sphereGeometry />
-          <meshStandardMaterial color="orange" />
+          {/* <meshStandardMaterial color="orange" /> */}
+          <meshBasicMaterial color="orange" />
         </mesh>
 
         <mesh
@@ -121,7 +139,8 @@ export default function Experience()
           // }}
         >
           <boxGeometry />
-          <meshStandardMaterial color="orange" />
+          {/* <meshStandardMaterial color="orange" /> */}
+          <meshBasicMaterial color="orange" />
           {/* <meshStandardMaterial
             color={[2.5, 1, 4]}
             toneMapped={false}
@@ -142,7 +161,7 @@ export default function Experience()
           scale={10}
         >
           <planeGeometry />
-          <meshStandardMaterial color="black" metalness={0} roughness={0}/>
+          <meshStandardMaterial color="green" metalness={0} roughness={0} />
         </mesh>
       </>
     );
