@@ -1,168 +1,61 @@
-import { OrbitControls, meshBounds, useGLTF } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
-import { Bloom, DepthOfField, EffectComposer, Glitch, Noise, SSR, Vignette } from '@react-three/postprocessing'
-import { useControls } from 'leva'
-import { BlendFunction, GlitchMode } from 'postprocessing'
-import { Perf } from 'r3f-perf'
-import { useRef } from 'react'
-import Drunk from './Drunk'
+import { ContactShadows, Environment, Float, Html, PresentationControls, Text, useGLTF } from '@react-three/drei';
 
-export default function Experience()
-{
-    // const cube = useRef()
-    const  drunkREF = useRef()
-    
-    const gamburgerM = useGLTF('./hamburger.glb')
+export default function Experience() {
+    const model = useGLTF('./macbook/model.gltf')
 
-    const { frequency, amplitude, time } = useControls("DrunkEffect", {
-      frequency: { value: 10, min: 0, max: 100 },
-      amplitude: { value: 0.1, min: 0, max: 1},
-      // time: 0
-    });
-
-    // useFrame((state, delta) =>
-    // {
-    //  console.log(drunkREF.current.uniforms)
-    // })
-
-    // const eventHandler = (e) => { 
-    //     e.object.material.color.set(
-    //       `hsl(${Math.random() * 360}, 100%, 75%)`
-    //     );
-
-        
-    //  }
-
-    // const effects = useControls({
-    //   temporalResolve: true,
-    //   STRETCH_MISSED_RAYS: true,
-    //   USE_MRT: true,
-    //   USE_NORMALMAP: true,
-    //   USE_ROUGHNESSMAP: true,
-    //   ENABLE_JITTERING: true,
-    //   ENABLE_BLUR: true,
-    //   temporalResolveMix: { value: 0.9, min: 0, max: 1 },
-    //   temporalResolveCorrectionMix: { value: 0.25, min: 0, max: 1 },
-    //   maxSamples: { value: 0, min: 0, max: 1 },
-    //   resolutionScale: { value: 1, min: 0, max: 1 },
-    //   blurMix: { value: 0.5, min: 0, max: 1 },
-    //   blurKernelSize: { value: 8, min: 0, max: 8 },
-    //   blurSharpness: { value: 0.5, min: 0, max: 1 },
-    //   rayStep: { value: 0.3, min: 0, max: 1 },
-    //   intensity: { value: 1, min: 0, max: 5 },
-    //   maxRoughness: { value: 0.1, min: 0, max: 1 },
-    //   jitter: { value: 0.7, min: 0, max: 5 },
-    //   jitterSpread: { value: 0.45, min: 0, max: 1 },
-    //   jitterRough: { value: 0.1, min: 0, max: 1 },
-    //   roughnessFadeOut: { value: 1, min: 0, max: 1 },
-    //   rayFadeOut: { value: 0, min: 0, max: 1 },
-    //   MAX_STEPS: { value: 20, min: 0, max: 20 },
-    //   NUM_BINARY_SEARCH_STEPS: { value: 5, min: 0, max: 10 },
-    //   maxDepthDifference: { value: 3, min: 0, max: 10 },
-    //   maxDepth: { value: 1, min: 0, max: 1 },
-    //   thickness: { value: 10, min: 0, max: 10 },
-    //   ior: { value: 1.45, min: 0, max: 2 },
-    // });
-  
     return (
       <>
-        <OrbitControls makeDefault />
-
-        <color args={["#fff"]} attach="background" />
-
-        <Perf position="top-left" />
-        <directionalLight castShadow position={[1, 2, 3]} intensity={1.5} />
-        <ambientLight castShadow intensity={0.5} />
-        {/* 
-        <primitive
-          object={gamburgerM.scene}
-          scale={0.25}
-          position-y={0.5}
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log(e);
+        <color attach="background" args={["#141414"]} />
+        <Environment preset="city" />
+        <PresentationControls
+          global
+          rotation={[0.13, 0.1, 0]}
+          polar={[-0.4, 0.2]}
+          azimuth={[-1, 0.75]}
+          config={{
+            mass: 2,
+            tension: 400,
           }}
-          castShadow
-        /> */}
-
-        <EffectComposer>
-          {/* <EffectComposer multisampling={0}> */}
-          {/* <Noise blendFunction={BlendFunction.DARKEN} opacity={.7} premultiply /> */}
-          {/* <Vignette offset={.3} darkness={.9}/>
-          <Glitch
-            delay={[0.5, 1]}
-            duration={[0.1, 0.3]}
-            strength={[0.2, 0.4]}
-            mode={GlitchMode.SPORADIC}
-          />
-          <Noise blendFunction={BlendFunction.SOFT_LIGHT} premultiply />
-          <Bloom mipmapBlur />
-          <DepthOfField focusDistance={.025} focalLength={.025}  bokehScale={6} /> */}
-          {/* <SSR {...effects} /> */}
-          {/* <Drunk /> */}
-          <Drunk
-            ref={drunkREF}
-            frequency={frequency}
-            amplitude={amplitude}
-            blendFunction={BlendFunction.DARKEN}
-            time={time}
-          />
-        </EffectComposer>
-        <mesh
-          castShadow
-          position-x={-2}
-          // onClick={(e) => e.stopPropagation()}
-          // onPointerLeave={() => {
-          //   document.body.style.cursor = "default";
-          // }}
-          // onPointerEnter={() => {
-          //   document.body.style.cursor = "pointer";
-          // }}
+          snap={{
+            mass: 4,
+            tension: 400,
+          }}
         >
-          <sphereGeometry />
-          {/* <meshStandardMaterial color="orange" /> */}
-          <meshBasicMaterial color="orange" />
-        </mesh>
+          <Float rotationIntensity={0.4}>
+            <rectAreaLight
+              width={2.5}
+              height={1.65}
+              intensity={65}
+              color="#CBDEF0"
+              rotation={[0.1, Math.PI, 0]}
+              position={[0, 0.55, -1.15]}
+            />
 
-        <mesh
-          // ref={cube}
-          // raycast={meshBounds}
-          castShadow
-          position-x={2}
-          scale={1.5}
-          // onClick={eventHandler}
-          // onPointerLeave={() => {
-          //   document.body.style.cursor = "default";
-          // }}
-          // onPointerEnter={() => {
-          //   document.body.style.cursor = "pointer";
-          // }}
-        >
-          <boxGeometry />
-          {/* <meshStandardMaterial color="orange" /> */}
-          <meshBasicMaterial color="orange" />
-          {/* <meshStandardMaterial
-            color={[2.5, 1, 4]}
-            toneMapped={false}
-          /> */}
-          {/* <meshStandardMaterial
-            color="#ffffff"
-            emissive="orange"
-            emissiveIntensity={10}
-            // color={[2.5, 1, 4]}
-            toneMapped={false}
-          /> */}
-        </mesh>
+            <primitive object={model.scene} position-y={-1.2}>
+              <Html
+                transform
+                wrapperClass="htmlScreen"
+                distanceFactor={1.17}
+                position={[0, 1.56, -1.4]}
+                rotation-x={-0.26}
+              >
+                <iframe src="https://reacthero-blog.vercel.app/" />
+              </Html>
+            </primitive>
 
-        <mesh
-          receiveShadow
-          position-y={-1}
-          rotation-x={-Math.PI * 0.5}
-          scale={10}
-        >
-          <planeGeometry />
-          <meshStandardMaterial color="green" metalness={0} roughness={0} />
-        </mesh>
+            <Text
+              font="./bangers-v20-latin-regular.woff"
+              fontSize={1}
+              position={[2.5, 0.75, 0.75]}
+              rotation-y={-1.25}
+              maxWidth={1.5}
+            >
+              Oleksii Bortnytksyi
+            </Text>
+          </Float>
+        </PresentationControls>
+
+        <ContactShadows position-y={-1.4} opacity={0.4} scale={5} blur={2.4} />
       </>
     );
 }
