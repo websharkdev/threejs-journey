@@ -1,11 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&display=swap');
+
+* {
+    font-family: 'Montserrat', sans-serif;
+}
+
+
 html,
 body,
-#root
-{
+#root {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background: ivory;
+}
+
+
+.interface {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+
+.time {
+    position: absolute;
+    top: 15%;
+    left: 0;
+    width: 100%;
+    color: #fff;
+    font-size: 6vh;
+    background: #00000033;
+    text-align: center;
+    font-weight: 900;
+    padding-top: 5px;
+}
+
+.restart {
+    display: flex;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    color: #fff;
+    font-size: 80px;
+    background: #00000033;
+    text-align: center;
+    font-weight: 900;
+    padding-top: 10px;
+    cursor: pointer;
+    pointer-events: auto;
+    transform: translateY(-50%);
+
+}
+
+/**
+ * Controls
+ */
+.controls {
+    position: absolute;
+    bottom: 10%;
+    left: 0;
+    width: 100%;
+}
+
+.controls .raw {
+    display: flex;
+    justify-content: center;
+}
+
+.controls .key {
+    width: 40px;
+    height: 40px;
+    margin: 4px;
+    border: 2px solid #ffffff;
+    background: #ffffff44;
+}
+
+.controls .key.large {
+    width: 144px;
+}
+
+.controls .key.active {
+    background: #ffffff99;
 }
