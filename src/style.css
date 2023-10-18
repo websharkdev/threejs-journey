@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Mono:wght@700&display=swap');
 
 * {
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Fira Mono', sans-serif;
 }
 
 
@@ -36,7 +36,7 @@ body,
     font-size: 6vh;
     background: #00000033;
     text-align: center;
-    font-weight: 900;
+    font-weight: 700;
     padding-top: 5px;
 }
 
@@ -88,4 +88,11 @@ body,
 
 .controls .key.active {
     background: #ffffff99;
+}
+
+
+@media screen and (max-width: 720px) {
+    .interface {
+        display: none;
+    }
 }

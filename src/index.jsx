@@ -1,9 +1,12 @@
-import "./style.css";
-import ReactDOM from "react-dom/client";
+import { FaceControls, FaceLandmarker, KeyboardControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import { Suspense } from "react";
+import ReactDOM from "react-dom/client";
 import Experience from "./Experience.jsx";
-import { KeyboardControls } from "@react-three/drei";
 import Interface from "./Interface";
+import "./style.css";
+
+
 
 const root = ReactDOM.createRoot(document.querySelector("#root"));
 
@@ -27,6 +30,10 @@ root.render(
         keys: ["ArrowRight", "KeyD"],
       },
       {
+        name: "nitro",
+        keys: ["Shift"],
+      },
+      {
         name: "jump",
         keys: ["Space"],
       },
@@ -41,8 +48,10 @@ root.render(
         position: [2.5, 4, 6],
       }}
     >
-      <Experience />
+      <Suspense fallback={null}>
+        <Experience />
+      </Suspense>
     </Canvas>
-    <Interface/>
+    <Interface />
   </KeyboardControls>
 );

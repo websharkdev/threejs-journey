@@ -1,12 +1,11 @@
 import { create } from "zustand";
-import {subscribeWithSelector} from 'zustand/middleware'
+import { subscribeWithSelector } from 'zustand/middleware';
 
 export default create(
   subscribeWithSelector((set) => {
     return {
       blockSeed: 0,
       traps: 10,
-      // PHASES: READY | PLAYING | ENDED
       startTime: 0,
       endTime: 0,
       phase: "ready",

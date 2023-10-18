@@ -37,12 +37,12 @@ const BlockStart = ({ position = [0, 0, 0] }) => {
         material={startMaterial}
       />
 
-      <Float floatIntensity={.25} rotationIntensity={.25}>
+      {window.innerWidth > 720 && <Float floatIntensity={.25} rotationIntensity={.25}>
         <Text font="./bebas-neue-v9-latin-regular.woff" maxWidth={.25} lineHeight={.75} textAlign="right" position={[0.75, .65, 0]} rotation-y={-0.25} fontSize={.35}>
           Marble Race
           <meshBasicMaterial toneMapped={false}/>
         </Text>
-      </Float>
+      </Float>}
     </group>
   );
 };
