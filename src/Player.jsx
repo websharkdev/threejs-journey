@@ -1,4 +1,4 @@
-import { useKeyboardControls } from "@react-three/drei";
+import { FaceControls, useKeyboardControls } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { RigidBody, useRapier } from "@react-three/rapier";
 import { useEffect, useRef, useState } from "react";
@@ -18,7 +18,15 @@ export const Player = () => {
   const restart = useGame((state) => state.restart);
   const end = useGame((state) => state.end);
 
+
   const body = useRef();
+
+  
+  const reset = () => {
+    body.current.setTranslation({ x: 0, y: 1, z: 0 });
+    body.current.setLinvel({ x: 0, y: 0, z: 0 });
+    body.current.setAngvel({ x: 0, y: 0, z: 0 });
+  };
 
   useFrame((state, delta) => {
     // CONTROLS
@@ -95,12 +103,6 @@ export const Player = () => {
     hit.toi <= 0.15 ? body.current.applyImpulse({ x: 0, y: 0.5, z: 0 }) : null;
   };
 
-  const reset = () => {
-    body.current.setTranslation({ x: 0, y: 1, z: 0 });
-    body.current.setLinvel({ x: 0, y: 0, z: 0 });
-    body.current.setAngvel({ x: 0, y: 0, z: 0 });
-  };
-
   useEffect(() => {
     const unsubscribeReset = useGame.subscribe(
       (state) => state.phase,
@@ -108,7 +110,6 @@ export const Player = () => {
         value === "ready" ? reset() : null;
       }
     );
-
     // SELECTOR and VALUE
     const unsubscribeJunp = subscribeKeys(
       (state) => state.jump,
@@ -124,12 +125,15 @@ export const Player = () => {
       }
     );
 
+  
     return () => {
       unsubscribeJunp();
       unsubscribeAny();
       unsubscribeReset();
     };
   }, []);
+
+
 
   return (
     <RigidBody

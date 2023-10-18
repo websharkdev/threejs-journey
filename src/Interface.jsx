@@ -1,7 +1,7 @@
 import { useKeyboardControls } from "@react-three/drei";
+import { addEffect } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import useGame from "./store/useGame";
-import { addEffect } from "@react-three/fiber";
 
 export default function Interface() {
   const time = useRef()
@@ -42,10 +42,13 @@ export default function Interface() {
     }
   }, [])
 
+
   return (
     <div className="interface">
       {/* TIME */}
-      <div className="time" ref={time}>0.00</div>
+      <div className="time" ref={time}>
+        0.00
+      </div>
       {/* RESTART */}
       {phase === "ended" && (
         <div className="restart" onClick={restart}>
@@ -55,7 +58,8 @@ export default function Interface() {
 
       <div className="controls">
         <div className="raw">
-          <div className={`key ${forward ? "active" : ""}`}></div>
+          <div
+            className={`key ${forward ? "active" : ""}`}></div>
         </div>
         <div className="raw">
           <div className={`key ${leftward ? "active" : ""}`}></div>
